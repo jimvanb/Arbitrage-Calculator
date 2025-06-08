@@ -5,31 +5,21 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Arbitrage Calculator</title>
     <style>
+      * {
+        box-sizing: border-box;
+      }
+
       body {
         font-family: "Segoe UI", sans-serif;
         background-color: #f7f7f7;
         color: #333;
         margin: 0;
         padding: 20px;
-        max-width: 600px;
-        margin: auto;
-        box-sizing: border-box;
       }
-      @media (max-width: 600px) {
-        body {
-          padding: 10px;
-          font-size: 16px;
-        }
 
-        input[type="number"],
-        button {
-          font-size: 16px;
-          padding: 12px;
-        }
-
-        .explanation {
-          font-size: 14px;
-        }
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
       }
 
       h1 {
@@ -49,16 +39,15 @@
 
       input[type="number"] {
         width: 100%;
-        max-width: 100%;
         padding: 10px;
         font-size: 16px;
-        box-sizing: border-box;
         border: 1px solid #ccc;
         border-radius: 5px;
+        appearance: none;
       }
 
-      input[type="number"]::-webkit-inner-spin-button,
-      input[type="number"]::-webkit-outer-spin-button {
+      input::-webkit-inner-spin-button,
+      input::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
       }
@@ -75,20 +64,16 @@
         border: none;
         border-radius: 5px;
         cursor: pointer;
+        margin-bottom: 20px;
         background-color: #3498db;
         color: white;
       }
-      button.ResetOdd {
-        margin-bottom: 20px;
-      }
-      button.AddOdd {
-        margin-bottom: 20px;
-      }
+
       button:hover {
         background-color: #2980b9;
       }
 
-      #result {
+      #resultaat {
         margin-top: 20px;
         background-color: #ecf0f1;
         padding: 15px;
@@ -97,7 +82,7 @@
         transition: opacity 0.5s ease;
       }
 
-      #result.fade-in {
+      #resultaat.fade-in {
         opacity: 1;
       }
 
@@ -110,46 +95,64 @@
         font-size: 15px;
         line-height: 1.5;
       }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+      }
     </style>
   </head>
   <body>
-    <h1>Arbitrage Calculator</h1>
+    <div class="container">
+      <h1>Arbitrage Calculator</h1>
 
-    <div id="odds-container">
-      <div class="input-group">
-        <label>Odd 1:</label>
-        <input type="number" step="any" class="odd-input" placeholder="2.10" />
+      <div id="odds-container">
+        <div class="input-group">
+          <label>Odd 1:</label>
+          <input
+            type="number"
+            step="any"
+            class="odd-input"
+            placeholder="2.10"
+          />
+        </div>
+        <div class="input-group">
+          <label>Odd 2:</label>
+          <input
+            type="number"
+            step="any"
+            class="odd-input"
+            placeholder="1.95"
+          />
+        </div>
       </div>
+
+      <button onclick="addOddInput()">+ Add an extra odd</button>
+      <button onclick="resetForm()">Reset</button>
+
       <div class="input-group">
-        <label>Odd 2:</label>
-        <input type="number" step="any" class="odd-input" placeholder="1.95" />
+        <label>Totale inzet (€):</label>
+        <input
+          type="number"
+          step="any"
+          id="stake"
+          placeholder="100"
+          onkeydown="if(event.key==='Enter'){checkArbitrage();}"
+        />
       </div>
-    </div>
 
-    <button onclick="addOddInput()" class="AddOdd">+ Add an extra odd</button>
-    <button onclick="resetForm()" class="ResetOdd">Reset</button>
+      <button onclick="checkArbitrage()">Calculate Arbitrage</button>
 
-    <div class="input-group">
-      <label>Totale inzet (€):</label>
-      <input
-        type="number"
-        step="any"
-        id="stake"
-        placeholder="100"
-        onkeydown="if(event.key==='Enter'){checkArbitrage();}"
-      />
-    </div>
+      <div id="resultaat"></div>
 
-    <button onclick="checkArbitrage()">Calculate Arbitrage</button>
-
-    <div id="result"></div>
-
-    <div class="explanation">
-      <strong>How does this tool work?</strong><br />
-      Enter at least two different odds and a total amount you want to bet. Then
-      click on "Calculate Arbitrage" or press Enter after you have entered your
-      stake. The tool will show you if arbitrage is possible and how you can
-      best distribute your stake. Use the reset button to start over.
+      <div class="explanation">
+        <strong>Hoe werkt deze tool?</strong><br />
+        Enter at least two different odds and a total bet. Then click on
+        "Calculate Arbitrage" or press Enter. The tool will show you whether
+        arbitrage is possible and how best to divide the amount. Use the Reset
+        button to start over.
+      </div>
     </div>
 
     <script>
@@ -236,7 +239,7 @@
         const oddsElements = document.querySelectorAll(".odd-input");
         const odds = Array.from(oddsElements).map((el) => parseFloat(el.value));
         const stake = parseFloat(document.getElementById("stake").value);
-        const output = document.getElementById("result");
+        const output = document.getElementById("resultaat");
 
         const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
 
@@ -251,18 +254,18 @@
         if (!result.isArb) {
           output.innerHTML = `<strong>No arbitrage possible</strong>`;
         } else {
-          let html = `<strong>Arbitrage possible!</strong><br>`;
-          html += `Profit percentage: <strong>${result.arbPercentage.toFixed(
+          let html = `<strong>Arbitrage mogelijk!</strong><br>`;
+          html += `Winstpercentage: <strong>${result.arbPercentage.toFixed(
             2
           )}%</strong><br>`;
-          html += `Minimal profit: <strong>€${result.profit.toFixed(
+          html += `Minimale winst: <strong>€${result.profit.toFixed(
             2
           )}</strong><br><br>`;
           html += `<strong>Strategie:</strong><ul>`;
           result.odds.forEach((odd, i) => {
             html += `<li>Odd ${odd.toFixed(2)} → Inzet: €${result.betAmounts[
               i
-            ].toFixed(2)} | Payment: €${result.payouts[i].toFixed(2)}</li>`;
+            ].toFixed(2)} | Uitbetaling: €${result.payouts[i].toFixed(2)}</li>`;
           });
           html += `</ul>`;
           output.innerHTML = html;
