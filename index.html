@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="nl">
+<html lang="en">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -110,21 +110,11 @@
       <div id="odds-container">
         <div class="input-group">
           <label>Odd 1:</label>
-          <input
-            type="number"
-            step="any"
-            class="odd-input"
-            placeholder="2.10"
-          />
+          <input type="number" step="any" class="odd-input" placeholder="2.10" />
         </div>
         <div class="input-group">
           <label>Odd 2:</label>
-          <input
-            type="number"
-            step="any"
-            class="odd-input"
-            placeholder="1.95"
-          />
+          <input type="number" step="any" class="odd-input" placeholder="1.95" />
         </div>
       </div>
 
@@ -132,7 +122,7 @@
       <button onclick="resetForm()">Reset</button>
 
       <div class="input-group">
-        <label>Totale inzet (€):</label>
+        <label>Total stake (€):</label>
         <input
           type="number"
           step="any"
@@ -148,9 +138,9 @@
 
       <div class="explanation">
         <strong>How does this tool work?</strong><br />
-        Enter at least two different odds and a total bet. Then click on
-        "Calculate Arbitrage" or press Enter. The tool will show you whether
-        arbitrage is possible and how best to divide the amount. Use the Reset
+        Enter at least two different odds and a total stake. Then click on
+        "Calculate Arbitrage" or press Enter. The tool will show whether
+        arbitrage is possible and how best to divide your money. Use the Reset
         button to start over.
       </div>
     </div>
@@ -169,7 +159,7 @@
         const input = document.createElement("input");
         input.type = "number";
         input.step = "any";
-        input.placeholder = "bijv. 3.20";
+        input.placeholder = "e.g. 3.20";
         input.className = "odd-input";
 
         div.appendChild(label);
@@ -244,7 +234,7 @@
         const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
 
         if (isNaN(stake) || stake <= 0 || validOdds.length < 2) {
-          output.innerHTML = `<strong>Fill in at least 2 odds and a stake.</strong>`;
+          output.innerHTML = `<strong>Please enter at least 2 odds and a stake.</strong>`;
           triggerFadeIn(output);
           return;
         }
@@ -252,20 +242,16 @@
         const result = calculateArbitrage(validOdds, stake);
 
         if (!result.isArb) {
-          output.innerHTML = `<strong>No arbitrage possible</strong>`;
+          output.innerHTML = `<strong>No arbitrage opportunity detected.</strong>`;
         } else {
-          let html = `<strong>Arbitrage mogelijk!</strong><br>`;
-          html += `Winstpercentage: <strong>${result.arbPercentage.toFixed(
-            2
-          )}%</strong><br>`;
-          html += `Minimale winst: <strong>€${result.profit.toFixed(
-            2
-          )}</strong><br><br>`;
-          html += `<strong>Strategie:</strong><ul>`;
+          let html = `<strong>Arbitrage opportunity found!</strong><br>`;
+          html += `Profit margin: <strong>${result.arbPercentage.toFixed(2)}%</strong><br>`;
+          html += `Minimum guaranteed profit: <strong>€${result.profit.toFixed(2)}</strong><br><br>`;
+          html += `<strong>Betting strategy:</strong><ul>`;
           result.odds.forEach((odd, i) => {
-            html += `<li>Odd ${odd.toFixed(2)} → Inzet: €${result.betAmounts[
-              i
-            ].toFixed(2)} | Uitbetaling: €${result.payouts[i].toFixed(2)}</li>`;
+            html += `<li>Odd ${odd.toFixed(2)} → Bet: €${result.betAmounts[i].toFixed(
+              2
+            )} | Payout: €${result.payouts[i].toFixed(2)}</li>`;
           });
           html += `</ul>`;
           output.innerHTML = html;
