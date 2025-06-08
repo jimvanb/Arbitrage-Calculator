@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="nl">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Arbitrage Calculator</title>
+    <style>
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        font-family: "Segoe UI", sans-serif;
+        background-color: #f7f7f7;
+        color: #333;
+        margin: 0;
+        padding: 20px;
+      }
+
+      .container {
+        max-width: 600px;
+        margin: 0 auto;
+      }
+
+      h1 {
+        text-align: center;
+        color: #2c3e50;
+      }
+
+      .input-group {
+        margin-bottom: 15px;
+      }
+
+      label {
+        display: block;
+        font-weight: bold;
+        margin-bottom: 5px;
+      }
+
+      input[type="number"] {
+        width: 100%;
+        padding: 10px;
+        font-size: 16px;
+        border: 1px solid #ccc;
+        border-radius: 5px;
+        appearance: none;
+      }
+
+      input::-webkit-inner-spin-button,
+      input::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+      }
+
+      input[type="number"] {
+        -moz-appearance: textfield;
+      }
+
+      button {
+        padding: 10px 15px;
+        font-size: 16px;
+        margin-right: 10px;
+        margin-top: 10px;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        margin-bottom: 20px;
+        background-color: #3498db;
+        color: white;
+      }
+
+      button:hover {
+        background-color: #2980b9;
+      }
+
+      #resultaat {
+        margin-top: 20px;
+        background-color: #ecf0f1;
+        padding: 15px;
+        border-radius: 5px;
+        opacity: 0;
+        transition: opacity 0.5s ease;
+      }
+
+      #resultaat.fade-in {
+        opacity: 1;
+      }
+
+      .explanation {
+        margin-top: 30px;
+        padding: 15px;
+        background-color: #fff8e1;
+        border-left: 4px solid #f1c40f;
+        border-radius: 5px;
+        font-size: 15px;
+        line-height: 1.5;
+      }
+
+      @media (max-width: 600px) {
+        body {
+          padding: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h1>Arbitrage Calculator</h1>
+
+      <div id="odds-container">
+        <div class="input-group">
+          <label>Odd 1:</label>
+          <input
+            type="number"
+            step="any"
+            class="odd-input"
+            placeholder="2.10"
+          />
+        </div>
+        <div class="input-group">
+          <label>Odd 2:</label>
+          <input
+            type="number"
+            step="any"
+            class="odd-input"
+            placeholder="1.95"
+          />
+        </div>
+      </div>
+
+      <button onclick="addOddInput()">+ Add an extra odd</button>
+      <button onclick="resetForm()">Reset</button>
+
+      <div class="input-group">
+        <label>Totale inzet (€):</label>
+        <input
+          type="number"
+          step="any"
+          id="stake"
+          placeholder="100"
+          onkeydown="if(event.key==='Enter'){checkArbitrage();}"
+        />
+      </div>
+
+      <button onclick="checkArbitrage()">Calculate Arbitrage</button>
+
+      <div id="resultaat"></div>
+
+      <div class="explanation">
+        <strong>Hoe werkt deze tool?</strong><br />
+        Enter at least two different odds and a total bet. Then click on
+        "Calculate Arbitrage" or press Enter. The tool will show you whether
+        arbitrage is possible and how best to divide the amount. Use the Reset
+        button to start over.
+      </div>
+    </div>
+
+    <script>
+      function addOddInput() {
+        const container = document.getElementById("odds-container");
+        const count = container.querySelectorAll(".odd-input").length;
+
+        const div = document.createElement("div");
+        div.className = "input-group";
+
+        const label = document.createElement("label");
+        label.textContent = `Odd ${count + 1}:`;
+
+        const input = document.createElement("input");
+        input.type = "number";
+        input.step = "any";
+        input.placeholder = "bijv. 3.20";
+        input.className = "odd-input";
+
+        div.appendChild(label);
+        div.appendChild(input);
+        container.appendChild(div);
+      }
+
+      function resetForm() {
+        const container = document.getElementById("odds-container");
+        container.innerHTML = "";
+
+        for (let i = 1; i <= 2; i++) {
+          const div = document.createElement("div");
+          div.className = "input-group";
+
+          const label = document.createElement("label");
+          label.textContent = `Odd ${i}:`;
+
+          const input = document.createElement("input");
+          input.type = "number";
+          input.step = "any";
+          input.placeholder = i === 1 ? "2.10" : "1.95";
+          input.className = "odd-input";
+
+          div.appendChild(label);
+          div.appendChild(input);
+          container.appendChild(div);
+        }
+
+        document.getElementById("stake").value = "";
+        const output = document.getElementById("resultaat");
+        output.innerHTML = "";
+        output.classList.remove("fade-in");
+      }
+
+      function triggerFadeIn(element) {
+        element.classList.remove("fade-in");
+        void element.offsetWidth;
+        element.classList.add("fade-in");
+      }
+
+      function calculateArbitrage(odds, stake) {
+        const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
+        const sumInverse = validOdds.reduce((acc, odd) => acc + 1 / odd, 0);
+        const arbPercentage = 1 / sumInverse - 1;
+
+        if (arbPercentage <= 0) {
+          return { isArb: false };
+        }
+
+        const betPortions = validOdds.map((odd) => 1 / sumInverse / odd);
+        const betAmounts = betPortions.map((portion) => portion * stake);
+        const payouts = validOdds.map((odd, i) => odd * betAmounts[i]);
+        const profit = Math.min(...payouts) - stake;
+
+        return {
+          isArb: true,
+          arbPercentage: arbPercentage * 100,
+          betAmounts,
+          payouts,
+          profit,
+          odds: validOdds,
+        };
+      }
+
+      function checkArbitrage() {
+        const oddsElements = document.querySelectorAll(".odd-input");
+        const odds = Array.from(oddsElements).map((el) => parseFloat(el.value));
+        const stake = parseFloat(document.getElementById("stake").value);
+        const output = document.getElementById("resultaat");
+
+        const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
+
+        if (isNaN(stake) || stake <= 0 || validOdds.length < 2) {
+          output.innerHTML = `<strong>Fill in at least 2 odds and a stake.</strong>`;
+          triggerFadeIn(output);
+          return;
+        }
+
+        const result = calculateArbitrage(validOdds, stake);
+
+        if (!result.isArb) {
+          output.innerHTML = `<strong>No arbitrage possible</strong>`;
+        } else {
+          let html = `<strong>Arbitrage mogelijk!</strong><br>`;
+          html += `Winstpercentage: <strong>${result.arbPercentage.toFixed(
+            2
+          )}%</strong><br>`;
+          html += `Minimale winst: <strong>€${result.profit.toFixed(
+            2
+          )}</strong><br><br>`;
+          html += `<strong>Strategie:</strong><ul>`;
+          result.odds.forEach((odd, i) => {
+            html += `<li>Odd ${odd.toFixed(2)} → Inzet: €${result.betAmounts[
+              i
+            ].toFixed(2)} | Uitbetaling: €${result.payouts[i].toFixed(2)}</li>`;
+          });
+          html += `</ul>`;
+          output.innerHTML = html;
+        }
+
+        triggerFadeIn(output);
+      }
+    </script>
+  </body>
+</html>
