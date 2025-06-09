@@ -101,7 +101,6 @@
       </div>
 
       <button onclick="addOddInput()">+ Add an extra odd</button>
-      <button onclick="resetForm()">Reset</button>
 
       <div class="input-group">
         <label>Total stake (€):</label>
@@ -117,20 +116,20 @@
       <div class="input-group">
         <label>Pick your preferred odd (optional):</label>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px">
-          <button onclick="clearPreferredOdd()">Clear selection</button>
           <button onclick="checkArbitrage()">Calculate Arbitrage</button>
+          <button onclick="resetForm()">Reset</button>
         </div>
       </div>
 
-      <!-- ✅ Result container toegevoegd -->
+      <!-- Result container added -->
       <div id="resultaat"></div>
 
       <div class="explanation">
         <strong>How does this tool work?</strong><br />
-        Enter at least two different odds and a total stake. Then click
-        "Calculate Arbitrage" or press Enter. The tool will show if arbitrage is
-        possible and how to divide the stake. You can also optionally select one
-        odd as preferred (Dutching). Use the Reset button to start over.
+        Enter at least two different odds and a total stake. Click "Calculate
+        Arbitrage" or press Enter to see if an arbitrage opportunity exists and
+        how to split your stake. Optionally, select a preferred odd to apply a
+        biased strategy. Use 'Reset' to start over.
       </div>
     </div>
 
@@ -153,7 +152,7 @@
         const input = document.createElement("input");
         input.type = "number";
         input.step = "any";
-        input.placeholder = "e.g. 2.10";
+        input.placeholder = "e.g. 2.20";
         input.className = "odd-input";
         input.value = value;
 
@@ -296,7 +295,7 @@
                 ].toFixed(2)} | Payout: €${dutch.returns[i].toFixed(2)}</li>`;
               });
               html += `</ul>`;
-              html += `Expected profit: <strong>€${dutch.profit.toFixed(
+              html += `Possible profit: <strong>€${dutch.profit.toFixed(
                 2
               )}</strong><br>`;
             } else {
