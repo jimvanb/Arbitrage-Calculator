@@ -8,7 +8,6 @@
       * {
         box-sizing: border-box;
       }
-
       body {
         font-family: "Segoe UI", sans-serif;
         background-color: #f7f7f7;
@@ -16,27 +15,22 @@
         margin: 0;
         padding: 20px;
       }
-
       .container {
         max-width: 600px;
         margin: 0 auto;
       }
-
       h1 {
         text-align: center;
         color: #2c3e50;
       }
-
       .input-group {
         margin-bottom: 15px;
       }
-
       label {
         display: block;
         font-weight: bold;
         margin-bottom: 5px;
       }
-
       input[type="number"] {
         width: 100%;
         padding: 10px;
@@ -44,18 +38,13 @@
         border: 1px solid #ccc;
         border-radius: 5px;
         appearance: none;
+        -moz-appearance: textfield;
       }
-
       input::-webkit-inner-spin-button,
       input::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
       }
-
-      input[type="number"] {
-        -moz-appearance: textfield;
-      }
-
       button {
         padding: 10px 15px;
         font-size: 16px;
@@ -68,11 +57,9 @@
         background-color: #3498db;
         color: white;
       }
-
       button:hover {
         background-color: #2980b9;
       }
-
       #resultaat {
         margin-top: 20px;
         background-color: #ecf0f1;
@@ -81,11 +68,9 @@
         opacity: 0;
         transition: opacity 0.5s ease;
       }
-
       #resultaat.fade-in {
         opacity: 1;
       }
-
       .explanation {
         margin-top: 30px;
         padding: 15px;
@@ -95,11 +80,15 @@
         font-size: 15px;
         line-height: 1.5;
       }
-
       @media (max-width: 600px) {
         body {
           padding: 10px;
         }
+      }
+      .radio-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 10px;
       }
     </style>
   </head>
@@ -108,14 +97,7 @@
       <h1>Arbitrage Calculator</h1>
 
       <div id="odds-container">
-        <div class="input-group">
-          <label>Odd 1:</label>
-          <input type="number" step="any" class="odd-input" placeholder="2.10" />
-        </div>
-        <div class="input-group">
-          <label>Odd 2:</label>
-          <input type="number" step="any" class="odd-input" placeholder="1.95" />
-        </div>
+        <!-- Odds input fields will be inserted here -->
       </div>
 
       <button onclick="addOddInput()">+ Add an extra odd</button>
@@ -132,21 +114,30 @@
         />
       </div>
 
-      <button onclick="checkArbitrage()">Calculate Arbitrage</button>
+      <div class="input-group">
+        <label>Pick your preferred odd (optional):</label>
+        <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px">
+          <button onclick="clearPreferredOdd()">Clear selection</button>
+          <button onclick="checkArbitrage()">Calculate Arbitrage</button>
+        </div>
+      </div>
 
+      <!-- ✅ Result container toegevoegd -->
       <div id="resultaat"></div>
 
       <div class="explanation">
         <strong>How does this tool work?</strong><br />
-        Enter at least two different odds and a total stake. Then click on
-        "Calculate Arbitrage" or press Enter. The tool will show whether
-        arbitrage is possible and how best to divide your money. Use the Reset
-        button to start over.
+        Enter at least two different odds and a total stake. Then click
+        "Calculate Arbitrage" or press Enter. The tool will show if arbitrage is
+        possible and how to divide the stake. You can also optionally select one
+        odd as preferred (Dutching). Use the Reset button to start over.
       </div>
     </div>
 
     <script>
-      function addOddInput() {
+      let preferredOdd = null;
+
+      function addOddInput(value = "") {
         const container = document.getElementById("odds-container");
         const count = container.querySelectorAll(".odd-input").length;
 
@@ -156,43 +147,50 @@
         const label = document.createElement("label");
         label.textContent = `Odd ${count + 1}:`;
 
+        const wrapper = document.createElement("div");
+        wrapper.className = "radio-wrapper";
+
         const input = document.createElement("input");
         input.type = "number";
         input.step = "any";
-        input.placeholder = "e.g. 3.20";
+        input.placeholder = "e.g. 2.10";
         input.className = "odd-input";
+        input.value = value;
 
+        const radio = document.createElement("input");
+        radio.type = "radio";
+        radio.name = "preferred-odd";
+
+        radio.addEventListener("change", () => {
+          preferredOdd = parseFloat(input.value);
+        });
+
+        input.addEventListener("input", () => {
+          if (radio.checked) preferredOdd = parseFloat(input.value);
+        });
+
+        wrapper.appendChild(input);
+        wrapper.appendChild(radio);
         div.appendChild(label);
-        div.appendChild(input);
+        div.appendChild(wrapper);
         container.appendChild(div);
       }
 
       function resetForm() {
         const container = document.getElementById("odds-container");
         container.innerHTML = "";
-
-        for (let i = 1; i <= 2; i++) {
-          const div = document.createElement("div");
-          div.className = "input-group";
-
-          const label = document.createElement("label");
-          label.textContent = `Odd ${i}:`;
-
-          const input = document.createElement("input");
-          input.type = "number";
-          input.step = "any";
-          input.placeholder = i === 1 ? "2.10" : "1.95";
-          input.className = "odd-input";
-
-          div.appendChild(label);
-          div.appendChild(input);
-          container.appendChild(div);
-        }
-
+        preferredOdd = null;
+        addOddInput("");
+        addOddInput("");
         document.getElementById("stake").value = "";
-        const output = document.getElementById("resultaat");
-        output.innerHTML = "";
-        output.classList.remove("fade-in");
+        document.getElementById("resultaat").innerHTML = "";
+        document.getElementById("resultaat").classList.remove("fade-in");
+      }
+
+      function clearPreferredOdd() {
+        const radios = document.querySelectorAll('input[name="preferred-odd"]');
+        radios.forEach((r) => (r.checked = false));
+        preferredOdd = null;
       }
 
       function triggerFadeIn(element) {
@@ -225,6 +223,33 @@
         };
       }
 
+      function calculateDutching(odds, stake, preferredOdd) {
+        const index = odds.findIndex((o) => o === preferredOdd);
+        if (index === -1) return null;
+
+        const bets = new Array(odds.length).fill(0);
+        let totalOtherBets = 0;
+
+        for (let i = 0; i < odds.length; i++) {
+          if (i !== index) {
+            bets[i] = stake / odds[i];
+            totalOtherBets += bets[i];
+          }
+        }
+
+        const remaining = stake - totalOtherBets;
+        if (remaining < 0) return null;
+
+        bets[index] = remaining;
+        const returns = odds.map((odd, i) => odd * bets[i]);
+
+        return {
+          bets,
+          returns,
+          profit: Math.max(...returns) - stake,
+        };
+      }
+
       function checkArbitrage() {
         const oddsElements = document.querySelectorAll(".odd-input");
         const odds = Array.from(oddsElements).map((el) => parseFloat(el.value));
@@ -234,31 +259,58 @@
         const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
 
         if (isNaN(stake) || stake <= 0 || validOdds.length < 2) {
-          output.innerHTML = `<strong>Please enter at least 2 odds and a stake.</strong>`;
+          output.innerHTML = `<strong>Fill in at least 2 valid odds and a stake.</strong>`;
           triggerFadeIn(output);
           return;
         }
 
         const result = calculateArbitrage(validOdds, stake);
 
+        let html = "";
+
         if (!result.isArb) {
-          output.innerHTML = `<strong>No arbitrage opportunity detected.</strong>`;
+          html += `<strong>No arbitrage possible</strong>`;
         } else {
-          let html = `<strong>Arbitrage opportunity found!</strong><br>`;
-          html += `Profit margin: <strong>${result.arbPercentage.toFixed(2)}%</strong><br>`;
-          html += `Minimum guaranteed profit: <strong>€${result.profit.toFixed(2)}</strong><br><br>`;
-          html += `<strong>Betting strategy:</strong><ul>`;
+          html += `<strong>Arbitrage possible!</strong><br>`;
+          html += `Profit percentage: <strong>${result.arbPercentage.toFixed(
+            2
+          )}%</strong><br>`;
+          html += `Minimum profit: <strong>€${result.profit.toFixed(
+            2
+          )}</strong><br><br>`;
+          html += `<strong>Standard strategy:</strong><ul>`;
           result.odds.forEach((odd, i) => {
-            html += `<li>Odd ${odd.toFixed(2)} → Bet: €${result.betAmounts[i].toFixed(
-              2
-            )} | Payout: €${result.payouts[i].toFixed(2)}</li>`;
+            html += `<li>Odd ${odd.toFixed(2)} → Stake: €${result.betAmounts[
+              i
+            ].toFixed(2)} | Payout: €${result.payouts[i].toFixed(2)}</li>`;
           });
           html += `</ul>`;
-          output.innerHTML = html;
+
+          if (preferredOdd && validOdds.includes(preferredOdd)) {
+            const dutch = calculateDutching(validOdds, stake, preferredOdd);
+            if (dutch) {
+              html += `<strong>Biased strategy:</strong><ul>`;
+              validOdds.forEach((odd, i) => {
+                html += `<li>Odd ${odd.toFixed(2)} → Stake: €${dutch.bets[
+                  i
+                ].toFixed(2)} | Payout: €${dutch.returns[i].toFixed(2)}</li>`;
+              });
+              html += `</ul>`;
+              html += `Expected profit: <strong>€${dutch.profit.toFixed(
+                2
+              )}</strong><br>`;
+            } else {
+              html += `<br><em>Insufficient stake to apply Dutching.</em>`;
+            }
+          }
         }
 
+        output.innerHTML = html;
         triggerFadeIn(output);
       }
+
+      // Initial setup
+      window.onload = () => resetForm();
     </script>
   </body>
 </html>
