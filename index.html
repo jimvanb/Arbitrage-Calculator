@@ -96,10 +96,7 @@
     <div class="container">
       <h1>Arbitrage Calculator</h1>
 
-      <div id="odds-container">
-        <!-- Odds input fields will be inserted here -->
-      </div>
-
+      <div id="odds-container"></div>
       <button onclick="addOddInput()">+ Add an extra odd</button>
 
       <div class="input-group">
@@ -114,14 +111,12 @@
       </div>
 
       <div class="input-group">
-        <label>Pick your preferred odd (optional):</label>
         <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 5px">
           <button onclick="checkArbitrage()">Calculate Arbitrage</button>
           <button onclick="resetForm()">Reset</button>
         </div>
       </div>
 
-      <!-- Result container added -->
       <div id="resultaat"></div>
 
       <div class="explanation">
@@ -157,7 +152,7 @@
         input.value = value;
 
         const radio = document.createElement("input");
-        radio.type = "radio";
+        radio.type = "checkbox";
         radio.name = "preferred-odd";
 
         radio.addEventListener("change", () => {
@@ -184,12 +179,6 @@
         document.getElementById("stake").value = "";
         document.getElementById("resultaat").innerHTML = "";
         document.getElementById("resultaat").classList.remove("fade-in");
-      }
-
-      function clearPreferredOdd() {
-        const radios = document.querySelectorAll('input[name="preferred-odd"]');
-        radios.forEach((r) => (r.checked = false));
-        preferredOdd = null;
       }
 
       function triggerFadeIn(element) {
@@ -242,10 +231,21 @@
         bets[index] = remaining;
         const returns = odds.map((odd, i) => odd * bets[i]);
 
+        // ✅ Genormaliseerde kansen berekenen
+        const rawProbs = odds.map((odd) => 1 / odd);
+        const totalRawProb = rawProbs.reduce((sum, p) => sum + p, 0);
+        const normalizedProbs = rawProbs.map((p) => p / totalRawProb);
+
+        let expectedValue = 0;
+        for (let i = 0; i < odds.length; i++) {
+          expectedValue += normalizedProbs[i] * returns[i];
+        }
+        expectedValue -= stake;
+
         return {
           bets,
           returns,
-          profit: Math.max(...returns) - stake,
+          expectedValue,
         };
       }
 
@@ -295,7 +295,7 @@
                 ].toFixed(2)} | Payout: €${dutch.returns[i].toFixed(2)}</li>`;
               });
               html += `</ul>`;
-              html += `Possible profit: <strong>€${dutch.profit.toFixed(
+              html += `Expected value: <strong>€${dutch.expectedValue.toFixed(
                 2
               )}</strong><br>`;
             } else {
@@ -308,7 +308,6 @@
         triggerFadeIn(output);
       }
 
-      // Initial setup
       window.onload = () => resetForm();
     </script>
   </body>
