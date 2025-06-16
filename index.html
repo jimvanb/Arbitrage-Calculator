@@ -8,6 +8,7 @@
       * {
         box-sizing: border-box;
       }
+
       body {
         font-family: "Segoe UI", sans-serif;
         background-color: #f7f7f7;
@@ -15,22 +16,27 @@
         margin: 0;
         padding: 20px;
       }
+
       .container {
         max-width: 600px;
         margin: 0 auto;
       }
+
       h1 {
         text-align: center;
         color: #2c3e50;
       }
+
       .input-group {
         margin-bottom: 15px;
       }
+
       label {
         display: block;
         font-weight: bold;
         margin-bottom: 5px;
       }
+
       input[type="number"] {
         width: 100%;
         padding: 10px;
@@ -40,11 +46,13 @@
         appearance: none;
         -moz-appearance: textfield;
       }
+
       input::-webkit-inner-spin-button,
       input::-webkit-outer-spin-button {
         -webkit-appearance: none;
         margin: 0;
       }
+
       button {
         padding: 10px 15px;
         font-size: 16px;
@@ -57,9 +65,11 @@
         background-color: #3498db;
         color: white;
       }
+
       button:hover {
         background-color: #2980b9;
       }
+
       #resultaat {
         margin-top: 20px;
         background-color: #ecf0f1;
@@ -68,9 +78,11 @@
         opacity: 0;
         transition: opacity 0.5s ease;
       }
+
       #resultaat.fade-in {
         opacity: 1;
       }
+
       .explanation {
         margin-top: 30px;
         padding: 15px;
@@ -80,12 +92,14 @@
         font-size: 15px;
         line-height: 1.5;
       }
+
       @media (max-width: 600px) {
         body {
           padding: 10px;
         }
       }
-      .radio-wrapper {
+
+      .checkbox-wrapper {
         display: flex;
         align-items: center;
         gap: 10px;
@@ -95,12 +109,11 @@
   <body>
     <div class="container">
       <h1>Arbitrage Calculator</h1>
-
       <div id="odds-container"></div>
-      <button onclick="addOddInput()">+ Add an extra odd</button>
+      <button onclick="addOddInput()">+ Add extra odd</button>
 
       <div class="input-group">
-        <label>Total stake (€):</label>
+        <label>Total Stake (€):</label>
         <input
           type="number"
           step="any"
@@ -123,13 +136,14 @@
         <strong>How does this tool work?</strong><br />
         Enter at least two different odds and a total stake. Click "Calculate
         Arbitrage" or press Enter to see if an arbitrage opportunity exists and
-        how to split your stake. Optionally, select a preferred odd to apply a
-        biased strategy. Use 'Reset' to start over.
+        how to divide your stake. Optionally select a preferred odd for a biased
+        strategy. Use 'Reset' to start over.
       </div>
     </div>
 
     <script>
       let preferredOdd = null;
+      let lastCheckedBox = null;
 
       function addOddInput(value = "") {
         const container = document.getElementById("odds-container");
@@ -142,7 +156,7 @@
         label.textContent = `Odd ${count + 1}:`;
 
         const wrapper = document.createElement("div");
-        wrapper.className = "radio-wrapper";
+        wrapper.className = "checkbox-wrapper";
 
         const input = document.createElement("input");
         input.type = "number";
@@ -151,20 +165,33 @@
         input.className = "odd-input";
         input.value = value;
 
-        const radio = document.createElement("input");
-        radio.type = "checkbox";
-        radio.name = "preferred-odd";
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
 
-        radio.addEventListener("change", () => {
-          preferredOdd = parseFloat(input.value);
+        checkbox.addEventListener("change", () => {
+          const currentOdd = parseFloat(input.value);
+
+          if (checkbox.checked) {
+            if (lastCheckedBox && lastCheckedBox !== checkbox) {
+              lastCheckedBox.checked = false;
+            }
+
+            preferredOdd = currentOdd;
+            lastCheckedBox = checkbox;
+          } else {
+            preferredOdd = null;
+            lastCheckedBox = null;
+          }
         });
 
         input.addEventListener("input", () => {
-          if (radio.checked) preferredOdd = parseFloat(input.value);
+          if (checkbox.checked) {
+            preferredOdd = parseFloat(input.value);
+          }
         });
 
         wrapper.appendChild(input);
-        wrapper.appendChild(radio);
+        wrapper.appendChild(checkbox);
         div.appendChild(label);
         div.appendChild(wrapper);
         container.appendChild(div);
@@ -174,8 +201,9 @@
         const container = document.getElementById("odds-container");
         container.innerHTML = "";
         preferredOdd = null;
-        addOddInput("");
-        addOddInput("");
+        lastCheckedBox = null;
+        addOddInput();
+        addOddInput();
         document.getElementById("stake").value = "";
         document.getElementById("resultaat").innerHTML = "";
         document.getElementById("resultaat").classList.remove("fade-in");
@@ -188,26 +216,22 @@
       }
 
       function calculateArbitrage(odds, stake) {
-        const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
-        const sumInverse = validOdds.reduce((acc, odd) => acc + 1 / odd, 0);
+        const sumInverse = odds.reduce((acc, odd) => acc + 1 / odd, 0);
         const arbPercentage = 1 / sumInverse - 1;
+        if (arbPercentage <= 0) return { isArb: false };
 
-        if (arbPercentage <= 0) {
-          return { isArb: false };
-        }
-
-        const betPortions = validOdds.map((odd) => 1 / sumInverse / odd);
-        const betAmounts = betPortions.map((portion) => portion * stake);
-        const payouts = validOdds.map((odd, i) => odd * betAmounts[i]);
-        const profit = Math.min(...payouts) - stake;
+        const portions = odds.map((odd) => 1 / odd / sumInverse);
+        const amounts = portions.map((portion) => portion * stake);
+        const payouts = odds.map((odd, i) => odd * amounts[i]);
+        const profit =
+          Math.min(...payouts) - amounts.reduce((sum, a) => sum + a, 0);
 
         return {
           isArb: true,
           arbPercentage: arbPercentage * 100,
-          betAmounts,
+          betAmounts: amounts,
           payouts,
           profit,
-          odds: validOdds,
         };
       }
 
@@ -220,8 +244,9 @@
 
         for (let i = 0; i < odds.length; i++) {
           if (i !== index) {
-            bets[i] = stake / odds[i];
-            totalOtherBets += bets[i];
+            const amount = stake / odds[i];
+            bets[i] = amount;
+            totalOtherBets += amount;
           }
         }
 
@@ -231,22 +256,7 @@
         bets[index] = remaining;
         const returns = odds.map((odd, i) => odd * bets[i]);
 
-        // ✅ Genormaliseerde kansen berekenen
-        const rawProbs = odds.map((odd) => 1 / odd);
-        const totalRawProb = rawProbs.reduce((sum, p) => sum + p, 0);
-        const normalizedProbs = rawProbs.map((p) => p / totalRawProb);
-
-        let expectedValue = 0;
-        for (let i = 0; i < odds.length; i++) {
-          expectedValue += normalizedProbs[i] * returns[i];
-        }
-        expectedValue -= stake;
-
-        return {
-          bets,
-          returns,
-          expectedValue,
-        };
+        return { bets, returns };
       }
 
       function checkArbitrage() {
@@ -256,50 +266,45 @@
         const output = document.getElementById("resultaat");
 
         const validOdds = odds.filter((odd) => !isNaN(odd) && odd > 0);
-
         if (isNaN(stake) || stake <= 0 || validOdds.length < 2) {
-          output.innerHTML = `<strong>Fill in at least 2 valid odds and a stake.</strong>`;
+          output.innerHTML = `<strong>Please enter at least 2 valid odds and a stake.</strong>`;
           triggerFadeIn(output);
           return;
         }
 
-        const result = calculateArbitrage(validOdds, stake);
+        const result = calculateArbitrage(odds, stake);
 
         let html = "";
-
         if (!result.isArb) {
-          html += `<strong>No arbitrage possible</strong>`;
+          html += `<strong>No arbitrage opportunity found.</strong>`;
         } else {
-          html += `<strong>Arbitrage possible!</strong><br>`;
-          html += `Profit percentage: <strong>${result.arbPercentage.toFixed(
+          html += `<strong>Arbitrage opportunity detected!</strong><br>`;
+          html += `Profit margin: <strong>${result.arbPercentage.toFixed(
             2
           )}%</strong><br>`;
           html += `Minimum profit: <strong>€${result.profit.toFixed(
             2
-          )}</strong><br><br>`;
+          )}</strong><br>`;
           html += `<strong>Standard strategy:</strong><ul>`;
-          result.odds.forEach((odd, i) => {
-            html += `<li>Odd ${odd.toFixed(2)} → Stake: €${result.betAmounts[
-              i
-            ].toFixed(2)} | Payout: €${result.payouts[i].toFixed(2)}</li>`;
+          result.betAmounts.forEach((amt, i) => {
+            html += `<li>Odd ${odds[i].toFixed(2)} → Bet: €${amt.toFixed(
+              2
+            )} | Payout: €${result.payouts[i].toFixed(2)}</li>`;
           });
           html += `</ul>`;
 
-          if (preferredOdd && validOdds.includes(preferredOdd)) {
-            const dutch = calculateDutching(validOdds, stake, preferredOdd);
+          if (preferredOdd && odds.includes(preferredOdd)) {
+            const dutch = calculateDutching(odds, stake, preferredOdd);
             if (dutch) {
               html += `<strong>Biased strategy:</strong><ul>`;
-              validOdds.forEach((odd, i) => {
-                html += `<li>Odd ${odd.toFixed(2)} → Stake: €${dutch.bets[
+              odds.forEach((odd, i) => {
+                html += `<li>Odd ${odd.toFixed(2)} → Bet: €${dutch.bets[
                   i
                 ].toFixed(2)} | Payout: €${dutch.returns[i].toFixed(2)}</li>`;
               });
               html += `</ul>`;
-              html += `Expected value: <strong>€${dutch.expectedValue.toFixed(
-                2
-              )}</strong><br>`;
             } else {
-              html += `<br><em>Insufficient stake to apply Dutching.</em>`;
+              html += `<br><em>Insufficient stake for biased strategy.</em>`;
             }
           }
         }
