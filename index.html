@@ -70,6 +70,14 @@
         background-color: #2980b9;
       }
 
+      .remove-last-button {
+        background-color: #e74c3c;
+      }
+
+      .remove-last-button:hover {
+        background-color: #c0392b;
+      }
+
       #resultaat {
         margin-top: 20px;
         background-color: #ecf0f1;
@@ -93,16 +101,14 @@
         line-height: 1.5;
       }
 
-      @media (max-width: 600px) {
-        body {
-          padding: 10px;
-        }
+      .odd-row {
+        display: flex;
+        gap: 10px;
+        align-items: center;
       }
 
-      .checkbox-wrapper {
-        display: flex;
-        align-items: center;
-        gap: 10px;
+      .odd-row input[type="number"] {
+        flex: 1;
       }
     </style>
   </head>
@@ -110,7 +116,13 @@
     <div class="container">
       <h1>Arbitrage Calculator</h1>
       <div id="odds-container"></div>
-      <button onclick="addOddInput()">+ Add extra odd</button>
+
+      <div style="display: flex; gap: 10px; flex-wrap: wrap">
+        <button onclick="addOddInput()">+ Add extra odd</button>
+        <button class="remove-last-button" onclick="removeLastOdd()">
+          − Remove last odd
+        </button>
+      </div>
 
       <div class="input-group">
         <label>Total Stake (€):</label>
@@ -156,7 +168,7 @@
         label.textContent = `Odd ${count + 1}:`;
 
         const wrapper = document.createElement("div");
-        wrapper.className = "checkbox-wrapper";
+        wrapper.className = "odd-row";
 
         const input = document.createElement("input");
         input.type = "number";
@@ -170,12 +182,10 @@
 
         checkbox.addEventListener("change", () => {
           const currentOdd = parseFloat(input.value);
-
           if (checkbox.checked) {
             if (lastCheckedBox && lastCheckedBox !== checkbox) {
               lastCheckedBox.checked = false;
             }
-
             preferredOdd = currentOdd;
             lastCheckedBox = checkbox;
           } else {
@@ -195,6 +205,14 @@
         div.appendChild(label);
         div.appendChild(wrapper);
         container.appendChild(div);
+      }
+
+      function removeLastOdd() {
+        const container = document.getElementById("odds-container");
+        const odds = container.querySelectorAll(".input-group");
+        if (odds.length > 2) {
+          container.removeChild(odds[odds.length - 1]);
+        }
       }
 
       function resetForm() {
